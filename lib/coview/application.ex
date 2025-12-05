@@ -11,8 +11,10 @@ defmodule Coview.Application do
       CoviewWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:coview, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Coview.PubSub},
-      # Start a worker by calling: Coview.Worker.start_link(arg)
-      # {Coview.Worker, arg},
+      # Registry for room lookup by room_id
+      {Registry, keys: :unique, name: Coview.RoomRegistry},
+      # DynamicSupervisor for spawning room processes
+      {DynamicSupervisor, name: Coview.RoomSupervisor, strategy: :one_for_one},
       # Start to serve requests, typically the last entry
       CoviewWeb.Endpoint
     ]
