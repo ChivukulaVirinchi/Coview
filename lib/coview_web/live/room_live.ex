@@ -59,6 +59,8 @@ defmodule CoviewWeb.RoomLive do
   # Handle DOM updates from leader
   @impl true
   def handle_info({:dom_update, dom}, socket) do
+    require Logger
+    Logger.info("[RoomLive] Received DOM update, size: #{String.length(dom)} bytes")
     {:noreply, assign(socket, :current_dom, dom)}
   end
 

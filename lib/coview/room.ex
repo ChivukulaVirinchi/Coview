@@ -132,6 +132,12 @@ defmodule Coview.Room do
 
   @impl true
   def handle_cast({:update_dom, dom}, state) do
+    require Logger
+
+    Logger.info(
+      "[Room] Broadcasting DOM update for room #{state.room_id}, size: #{String.length(dom)} bytes"
+    )
+
     Phoenix.PubSub.broadcast(Coview.PubSub, "room:#{state.room_id}", {:dom_update, dom})
     {:noreply, %{state | current_dom: dom}}
   end
