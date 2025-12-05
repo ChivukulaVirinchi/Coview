@@ -103,3 +103,38 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* CoView: Click ripple effect */
+.click-ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: oklch(58% 0.233 277.117 / 0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: ripple 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  100% {
+    width: 100px;
+    height: 100px;
+    opacity: 0;
+  }
+}
+
+/* CoView: Ghost cursor animation */
+#ghost-cursor {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* CoView: View frame styles */
+#view-frame {
+  background: white;
+}

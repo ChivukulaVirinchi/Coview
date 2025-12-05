@@ -65,6 +65,15 @@ defmodule CoviewWeb.RoomChannel do
     {:noreply, socket}
   end
 
+  # Ignore PubSub broadcasts that come back to the channel
+  # (these are for LiveView subscribers, not channel subscribers)
+  @impl true
+  def handle_info({:dom_update, _}, socket), do: {:noreply, socket}
+  def handle_info({:cursor_update, _}, socket), do: {:noreply, socket}
+  def handle_info({:scroll_update, _}, socket), do: {:noreply, socket}
+  def handle_info({:click, _}, socket), do: {:noreply, socket}
+  def handle_info({:navigation, _}, socket), do: {:noreply, socket}
+
   # Leader sends full DOM
   @impl true
   def handle_in("dom_full", %{"html" => html}, socket) do
@@ -109,7 +118,7 @@ defmodule CoviewWeb.RoomChannel do
   @impl true
   def handle_in("click", payload, socket) do
     if socket.assigns.role == "leader" do
-      broadcast!(socket, "click", payload)
+      Room.broadcast_click(socket.assigns.room_id, payload)
     end
 
     {:reply, :ok, socket}
@@ -119,7 +128,7 @@ defmodule CoviewWeb.RoomChannel do
   @impl true
   def handle_in("navigation", %{"url" => url}, socket) do
     if socket.assigns.role == "leader" do
-      broadcast!(socket, "navigation", %{url: url})
+      Room.broadcast_navigation(socket.assigns.room_id, url)
     end
 
     {:reply, :ok, socket}

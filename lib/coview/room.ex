@@ -78,6 +78,20 @@ defmodule Coview.Room do
   end
 
   @doc """
+  Broadcasts a click event to all subscribers (does not store in state).
+  """
+  def broadcast_click(room_id, position) do
+    Phoenix.PubSub.broadcast(Coview.PubSub, "room:#{room_id}", {:click, position})
+  end
+
+  @doc """
+  Broadcasts a navigation event to all subscribers.
+  """
+  def broadcast_navigation(room_id, url) do
+    Phoenix.PubSub.broadcast(Coview.PubSub, "room:#{room_id}", {:navigation, url})
+  end
+
+  @doc """
   Gets the current room state.
   """
   def get_state(room_id) do

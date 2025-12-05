@@ -118,16 +118,28 @@ defmodule CoviewWeb.RoomChannelTest do
   end
 
   describe "handle_in click" do
-    test "leader can send click event", %{socket: socket} do
-      push(socket, "click", %{"x" => 150, "y" => 250})
-      assert_broadcast "click", %{"x" => 150, "y" => 250}
+    test "leader can send click event", %{socket: socket, room_id: room_id} do
+      # Subscribe to the PubSub topic to receive the click event
+      Phoenix.PubSub.subscribe(Coview.PubSub, "room:#{room_id}")
+
+      ref = push(socket, "click", %{"x" => 150, "y" => 250})
+      assert_reply ref, :ok
+
+      # Click events are broadcast via PubSub
+      assert_receive {:click, %{"x" => 150, "y" => 250}}
     end
   end
 
   describe "handle_in navigation" do
-    test "leader can send navigation event", %{socket: socket} do
-      push(socket, "navigation", %{"url" => "https://example.com/page"})
-      assert_broadcast "navigation", %{url: "https://example.com/page"}
+    test "leader can send navigation event", %{socket: socket, room_id: room_id} do
+      # Subscribe to the PubSub topic to receive the navigation event
+      Phoenix.PubSub.subscribe(Coview.PubSub, "room:#{room_id}")
+
+      ref = push(socket, "navigation", %{"url" => "https://example.com/page"})
+      assert_reply ref, :ok
+
+      # Navigation events are broadcast via PubSub
+      assert_receive {:navigation, "https://example.com/page"}
     end
   end
 

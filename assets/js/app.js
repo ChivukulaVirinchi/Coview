@@ -25,11 +25,66 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/coview"
 import topbar from "../vendor/topbar"
 
+// CoView Hooks
+let Hooks = {}
+
+// Hook to handle iframe scroll sync from server push events
+Hooks.ViewFrame = {
+  mounted() {
+    this.handleEvent("scroll_to", ({x, y}) => {
+      const iframe = this.el
+      if (iframe.contentWindow) {
+        try {
+          iframe.contentWindow.scrollTo(x, y)
+        } catch (e) {
+          // Cross-origin restrictions may prevent this
+          console.debug("Could not scroll iframe:", e)
+        }
+      }
+    })
+  }
+}
+
+// Hook to show click ripples when leader clicks
+Hooks.ClickRipple = {
+  mounted() {
+    this.handleEvent("click", ({x, y}) => {
+      const ripple = document.createElement("div")
+      ripple.className = "click-ripple"
+      ripple.style.left = x + "px"
+      ripple.style.top = y + "px"
+      this.el.appendChild(ripple)
+      
+      // Remove ripple after animation completes
+      setTimeout(() => ripple.remove(), 600)
+    })
+  }
+}
+
+// Hook to copy room link to clipboard
+Hooks.CopyLink = {
+  mounted() {
+    this.el.addEventListener("click", () => {
+      const url = this.el.dataset.url
+      navigator.clipboard.writeText(url).then(() => {
+        // Show feedback
+        const originalHTML = this.el.innerHTML
+        this.el.innerHTML = `<span class="hero-check w-4 h-4"></span><span>Copied!</span>`
+        setTimeout(() => {
+          this.el.innerHTML = originalHTML
+        }, 2000)
+      }).catch(err => {
+        console.error("Failed to copy:", err)
+      })
+    })
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, ...Hooks},
 })
 
 // Show progress bar on live navigation and form submits

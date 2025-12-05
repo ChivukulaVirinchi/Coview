@@ -79,6 +79,18 @@ defmodule CoviewWeb.RoomLive do
     {:noreply, socket}
   end
 
+  # Handle click events from leader - push to JS hook for ripple effect
+  @impl true
+  def handle_info({:click, position}, socket) do
+    {:noreply, push_event(socket, "click", position)}
+  end
+
+  # Handle navigation events from leader
+  @impl true
+  def handle_info({:navigation, url}, socket) do
+    {:noreply, assign(socket, :current_url, url)}
+  end
+
   # Handle presence diff events
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
