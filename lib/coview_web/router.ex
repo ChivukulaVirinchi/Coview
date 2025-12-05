@@ -17,7 +17,8 @@ defmodule CoviewWeb.Router do
   scope "/", CoviewWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", HomeLive
+    live "/room/:room_id", RoomLive
   end
 
   # Other scopes may use custom stacks.
