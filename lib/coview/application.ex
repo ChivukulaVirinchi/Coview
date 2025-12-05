@@ -11,6 +11,8 @@ defmodule Coview.Application do
       CoviewWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:coview, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Coview.PubSub},
+      # Presence for tracking users in rooms
+      CoviewWeb.Presence,
       # Registry for room lookup by room_id
       {Registry, keys: :unique, name: Coview.RoomRegistry},
       # DynamicSupervisor for spawning room processes
