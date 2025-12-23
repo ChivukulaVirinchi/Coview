@@ -2,6 +2,8 @@ defmodule CoviewWeb.RoomLive do
   @moduledoc """
   LiveView for viewing a shared browsing session.
   Followers join here to see the leader's browser view.
+
+  Works with both light and dark themes via Sutra UI theming.
   """
   use CoviewWeb, :live_view
 
@@ -149,145 +151,161 @@ defmodule CoviewWeb.RoomLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <div class="flex flex-col h-[90vh]">
-        <%!-- Top bar with room info --%>
-        <div class="flex items-center justify-between px-4 py-2 bg-base-100 border-b border-base-300 rounded-t-lg">
-          <%!-- Left: Room info & status --%>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-              <span class={[
-                "w-2 h-2 rounded-full",
-                if(@has_leader, do: "bg-success animate-pulse", else: "bg-base-300")
-              ]}>
-              </span>
-              <span class="text-sm font-medium">
-                {if @has_leader, do: "Live", else: "Waiting"}
-              </span>
-            </div>
-            <div class="text-sm text-base-content/60">
-              <span class="font-mono">{@room_id}</span>
-              <%= if @viewport_width && @viewport_height do %>
-                <span class="ml-2 text-xs">({@viewport_width}x{@viewport_height})</span>
-              <% end %>
-            </div>
-          </div>
-
-          <%!-- Right: Viewers & Copy link --%>
-          <div class="flex items-center gap-4">
-            <%!-- Presence indicators --%>
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-base-content/60">{map_size(@presences)} viewing</span>
-              <div class="flex -space-x-1">
-                <%= for {_user_id, %{metas: [meta | _]}} <- Enum.take(@presences, 5) do %>
-                  <span class={[
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 border-base-100",
-                    if(meta.role == "leader",
-                      do: "bg-primary text-primary-content",
-                      else: "bg-base-300 text-base-content/70"
-                    )
-                  ]}>
-                    {if meta.role == "leader", do: "L", else: "V"}
-                  </span>
-                <% end %>
-              </div>
-            </div>
-
-            <%!-- Copy link button --%>
-            <button
-              id="copy-link-btn"
-              phx-hook="CopyLink"
-              data-url={url(~p"/room/#{@room_id}")}
-              class="px-3 py-1.5 text-xs bg-base-200 hover:bg-base-300 rounded transition flex items-center gap-1"
-            >
-              <.icon name="hero-clipboard-document" class="w-4 h-4" />
-              <span>Copy link</span>
-            </button>
-          </div>
-        </div>
-
-        <%!-- Main viewing area - uses JS hook to scale iframe to fit --%>
-        <div
-          id="view-container"
-          class="flex-1 relative bg-base-200 rounded-b-lg overflow-hidden"
-          phx-hook="ScaledView"
-          data-viewport-width={@viewport_width}
-          data-viewport-height={@viewport_height}
-        >
-          <%= if @current_dom && @viewport_width && @viewport_height do %>
-            <%!-- Scaled wrapper - JS will calculate and apply the scale transform --%>
-            <div
-              id="scaled-wrapper"
-              class="origin-top-left absolute"
-              style={"width: #{@viewport_width}px; height: #{@viewport_height}px;"}
-            >
-              <%!-- phx-update="ignore" prevents LiveView from touching iframe after initial render --%>
-              <%!-- DOM updates are pushed via push_event and applied with morphdom --%>
-              <div id="view-frame-wrapper" phx-update="ignore">
-                <iframe
-                  id="view-frame"
-                  srcdoc={@current_dom}
-                  sandbox="allow-same-origin"
-                  class="w-full h-full border-0"
-                  style={"width: #{@viewport_width}px; height: #{@viewport_height}px;"}
-                  phx-hook="ViewFrame"
-                />
-              </div>
-
-              <%!-- Ghost cursor - positioned with leader's exact pixel coordinates --%>
-              <%= if @cursor do %>
-                <div
-                  id="ghost-cursor"
-                  class="absolute pointer-events-none z-50"
-                  style={"left: #{@cursor["x"] || @cursor[:x] || 0}px; top: #{@cursor["y"] || @cursor[:y] || 0}px;"}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M4 4L12 20L14 14L20 12L4 4Z"
-                      fill="#3B82F6"
-                      stroke="#1E40AF"
-                      stroke-width="2"
-                    />
-                  </svg>
-                </div>
-              <% end %>
-
-              <%!-- Click ripple container --%>
-              <div
-                id="click-ripples"
-                phx-hook="ClickRipple"
-                class="absolute inset-0 pointer-events-none"
-              >
-              </div>
+    <div class="flex flex-col h-screen bg-background">
+      <%!-- Status Bar --%>
+      <div class="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
+        <%!-- Left: LIVE indicator & Room info --%>
+        <div class="flex items-center gap-4">
+          <%!-- LIVE Indicator --%>
+          <%= if @has_leader do %>
+            <div class="live-indicator">
+              LIVE
             </div>
           <% else %>
-            <div class="flex items-center justify-center h-full text-base-content/60">
-              <div class="text-center">
-                <.icon name="hero-tv" class="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <%= if @has_leader do %>
-                  <p class="text-lg">Leader connected</p>
-                  <p class="text-sm mt-2">Waiting for content...</p>
-                <% else %>
-                  <p class="text-lg">Waiting for leader to share...</p>
-                  <p class="text-sm mt-2">The shared view will appear here</p>
-                <% end %>
-              </div>
+            <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+              <span class="w-2 h-2 rounded-full bg-muted-foreground/50 animate-gentle-pulse"></span> STANDBY
             </div>
           <% end %>
 
-          <%!-- No leader warning overlay --%>
-          <%= if not @has_leader and is_nil(@current_dom) do %>
-            <div class="absolute bottom-4 left-1/2 -translate-x-1/2">
-              <div class="px-4 py-2 bg-warning/10 border border-warning/30 rounded-lg">
-                <p class="text-xs text-warning flex items-center gap-1">
-                  <.icon name="hero-exclamation-triangle" class="w-4 h-4" /> No leader connected
-                </p>
+          <%!-- Room Code --%>
+          <div class="flex items-center gap-2">
+            <span class="room-code">{@room_id}</span>
+            <%= if @viewport_width && @viewport_height do %>
+              <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-muted border border-border rounded text-xs font-mono text-muted-foreground">
+                <.icon name="hero-device-tablet" class="size-3" />
+                {@viewport_width}×{@viewport_height}
+              </span>
+            <% end %>
+          </div>
+        </div>
+
+        <%!-- Right: Viewers & Actions --%>
+        <div class="flex items-center gap-4">
+          <%!-- Viewer Count --%>
+          <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-muted border border-border rounded text-xs font-mono text-muted-foreground">
+            <.icon name="hero-eye" class="size-3" />
+            <span>{map_size(@presences)} watching</span>
+          </div>
+
+          <%!-- Presence Orbs --%>
+          <div class="flex -space-x-2">
+            <%= for {_user_id, %{metas: [meta | _]}} <- Enum.take(@presences, 5) do %>
+              <div class={[
+                "viewer-orb animate-bloom",
+                if(meta.role == "leader", do: "leader", else: "connected")
+              ]}>
+                {if meta.role == "leader", do: "L", else: "V"}
               </div>
-            </div>
-          <% end %>
+            <% end %>
+            <%= if map_size(@presences) > 5 do %>
+              <div class="viewer-orb">+{map_size(@presences) - 5}</div>
+            <% end %>
+          </div>
+
+          <%!-- Copy Link --%>
+          <button
+            id="copy-link-btn"
+            phx-hook="CopyLink"
+            data-url={url(~p"/room/#{@room_id}")}
+            class="flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-accent text-secondary-foreground hover:text-accent-foreground rounded-lg transition-all text-sm"
+          >
+            <.icon name="hero-link" class="size-4" />
+            <span>Share</span>
+          </button>
         </div>
       </div>
-    </Layouts.app>
+
+      <%!-- Main Viewing Area --%>
+      <div
+        id="view-container"
+        class="flex-1 relative bg-muted overflow-hidden"
+        phx-hook="ScaledView"
+        data-viewport-width={@viewport_width}
+        data-viewport-height={@viewport_height}
+      >
+        <%= if @current_dom && @viewport_width && @viewport_height do %>
+          <%!-- Scaled wrapper - JS will calculate and apply the scale transform --%>
+          <div
+            id="scaled-wrapper"
+            class="origin-top-left absolute animate-fade-up"
+            style={"width: #{@viewport_width}px; height: #{@viewport_height}px;"}
+          >
+            <%!-- phx-update="ignore" prevents LiveView from touching iframe after initial render --%>
+            <%!-- DOM updates are pushed via push_event and applied with morphdom --%>
+            <div id="view-frame-wrapper" phx-update="ignore">
+              <iframe
+                id="view-frame"
+                srcdoc={@current_dom}
+                sandbox="allow-same-origin"
+                class="w-full h-full border-0 rounded-sm shadow-lg"
+                style={"width: #{@viewport_width}px; height: #{@viewport_height}px;"}
+                phx-hook="ViewFrame"
+              />
+            </div>
+
+            <%!-- Ghost Cursor with spotlight effect --%>
+            <%= if @cursor do %>
+              <div
+                id="ghost-cursor"
+                class="absolute pointer-events-none z-50 transition-all duration-75"
+                style={"left: #{@cursor["x"] || @cursor[:x] || 0}px; top: #{@cursor["y"] || @cursor[:y] || 0}px;"}
+              >
+                <%!-- Cursor glow --%>
+                <div class="absolute -inset-4 bg-coview-accent/20 rounded-full blur-xl"></div>
+                <%!-- Cursor icon --%>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="relative">
+                  <path
+                    d="M4 4L12 20L14 14L20 12L4 4Z"
+                    fill="var(--coview-accent)"
+                    stroke="var(--background)"
+                    stroke-width="2"
+                  />
+                </svg>
+              </div>
+            <% end %>
+
+            <%!-- Click ripple container --%>
+            <div
+              id="click-ripples"
+              phx-hook="ClickRipple"
+              class="absolute inset-0 pointer-events-none"
+            >
+            </div>
+          </div>
+        <% else %>
+          <%!-- Waiting State --%>
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center animate-fade-up">
+              <%= if @has_leader do %>
+                <%!-- Leader connected, waiting for content --%>
+                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-coview-accent-subtle flex items-center justify-center animate-live-pulse">
+                  <.icon name="hero-signal" class="size-10 text-coview-accent" />
+                </div>
+                <p class="text-xl text-foreground mb-2">Leader connected</p>
+                <p class="text-muted-foreground">Waiting for content to stream...</p>
+              <% else %>
+                <%!-- No leader yet --%>
+                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+                  <.icon name="hero-tv" class="size-10 text-muted-foreground" />
+                </div>
+                <p class="text-xl text-foreground mb-2">Waiting for broadcast</p>
+                <p class="text-muted-foreground mb-6">The shared view will appear here</p>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-coview-warm/10 border border-coview-warm/30 rounded-lg text-coview-warm text-sm">
+                  <.icon name="hero-clock" class="size-4" /> No leader connected yet
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%!-- Bottom Bar (optional floating controls) --%>
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 hover:opacity-100 transition-opacity">
+        <button class="p-2 bg-card/80 backdrop-blur border border-border rounded-lg text-muted-foreground hover:text-foreground transition">
+          <.icon name="hero-arrows-pointing-out" class="size-5" />
+        </button>
+      </div>
+    </div>
     """
   end
 

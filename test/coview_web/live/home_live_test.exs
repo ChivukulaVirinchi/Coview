@@ -7,7 +7,7 @@ defmodule CoviewWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ "CoView"
-      assert html =~ "Browse websites together"
+      assert html =~ "Watch anyone browse"
       assert html =~ "Join a Room"
     end
 

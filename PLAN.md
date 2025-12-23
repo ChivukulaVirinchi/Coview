@@ -127,19 +127,19 @@ The viewer experience should feel like watching a **live broadcast** or being in
 **Priority: Critical | Estimate: 1-2 days**
 
 ### 1.1 Remove DaisyUI, Add Sutra UI
-- [ ] Remove DaisyUI from assets/css/app.css
-- [ ] Remove DaisyUI vendor files
-- [ ] Add `{:sutra_ui, path: "../sutra_ui"}` to mix.exs
-- [ ] Configure Sutra UI in coview_web.ex
-- [ ] Import Sutra UI CSS
-- [ ] Configure Sutra UI hooks in app.js
+- [x] Remove DaisyUI from assets/css/app.css
+- [x] Remove DaisyUI vendor files
+- [x] Add `{:sutra_ui, path: "../sutra_ui"}` to mix.exs
+- [x] Configure Sutra UI in coview_web.ex
+- [x] Import Sutra UI CSS
+- [ ] Configure Sutra UI hooks in app.js (using colocated hooks from Phoenix 1.8)
 
 ### 1.2 Create Dark Theme CSS
-- [ ] Define CSS variables (colors, typography, spacing)
-- [ ] Create base styles (body, scrollbars, selection)
-- [ ] Create utility classes (text-muted, bg-elevated, etc.)
-- [ ] Add animation keyframes (fade-up, pulse, glow, bloom)
-- [ ] Add grain/noise texture overlay
+- [x] Define CSS variables (colors, typography, spacing)
+- [x] Create base styles (body, scrollbars, selection)
+- [x] Create utility classes (text-muted, bg-elevated, etc.)
+- [x] Add animation keyframes (fade-up, pulse, glow, bloom)
+- [x] Add grain/noise texture overlay (optional, commented out)
 
 ### 1.3 Fix Remaining Bugs
 - [ ] Verify morphdom iframe race condition fix works
@@ -158,23 +158,23 @@ The viewer experience should feel like watching a **live broadcast** or being in
 **Priority: High | Estimate: 1-2 days**
 
 ### 2.1 Hero Section
-- [ ] Large headline with Instrument Serif: "Watch anyone browse. *Live.*"
+- [x] Large headline with Instrument Serif: "Watch anyone browse. *Live.*"
 - [ ] Animated demo showing real-time sync (CSS or pre-recorded GIF)
 - [ ] "Create Room" CTA (generates random code, shows extension prompt)
-- [ ] "Join Room" input with sleek dark styling
+- [x] "Join Room" input with sleek dark styling
 - [ ] Subtle grid/dot pattern background
 
 ### 2.2 How It Works
-- [ ] 3-step visual flow with numbered cards
+- [x] 3-step visual flow with numbered cards
 - [ ] Step 1: Install extension (with download link)
 - [ ] Step 2: Start sharing (extension screenshot)
 - [ ] Step 3: Share link (viewers join instantly)
-- [ ] Staggered fade-in animation
+- [x] Staggered fade-in animation
 
 ### 2.3 Features Section
 - [ ] Feature grid with icons
 - [ ] Real-time sync, No video (privacy), Works on any site, Open source
-- [ ] Hover effects with glow
+- [x] Hover effects with glow
 
 ### 2.4 Live Stats (Showcase Phoenix)
 - [ ] Real-time counter: "X rooms active right now"
@@ -182,8 +182,8 @@ The viewer experience should feel like watching a **live broadcast** or being in
 - [ ] Subtle pulse animation on count change
 
 ### 2.5 Footer
-- [ ] GitHub link
-- [ ] "Built with Phoenix LiveView" badge
+- [x] GitHub link
+- [x] "Built with Phoenix LiveView" badge
 - [ ] Extension download link
 
 ---
@@ -192,49 +192,49 @@ The viewer experience should feel like watching a **live broadcast** or being in
 **Priority: High | Estimate: 2-3 days**
 
 ### 3.1 Main Layout
-- [ ] Dark background with subtle grain texture
-- [ ] Shared view in center with subtle border glow
+- [x] Dark background with subtle grain texture
+- [x] Shared view in center with subtle border glow
 - [ ] Presence panel on right (collapsible)
-- [ ] Floating control bar at bottom
+- [x] Floating control bar at bottom
 
 ### 3.2 "LIVE" Status Bar
-- [ ] Top bar with:
+- [x] Top bar with:
   - Pulsing "LIVE" indicator (when leader connected)
   - Room code (monospace, copyable)
-  - Duration: "Streaming for 5m 23s"
+  - Duration: "Streaming for 5m 23s" (TODO)
   - Latency indicator (optional)
-- [ ] Subtle backdrop blur
+- [x] Subtle backdrop blur
 
 ### 3.3 Presence Panel
 - [ ] Leader card at top (highlighted, avatar + "Sharing")
-- [ ] Viewer list with:
+- [x] Viewer list with:
   - Glowing orb avatars
-  - Join time: "Joined 2m ago"
-  - Connection quality indicator
-- [ ] Join/leave animations (bloom in, fade out)
-- [ ] Total viewer count
+  - Join time: "Joined 2m ago" (TODO)
+  - Connection quality indicator (TODO)
+- [x] Join/leave animations (bloom in, fade out)
+- [x] Total viewer count
 
 ### 3.4 Shared View Container
-- [ ] Dark frame with subtle border
-- [ ] "Power on" animation on first DOM load
+- [x] Dark frame with subtle border
+- [x] "Power on" animation on first DOM load
 - [ ] Loading state: skeleton with scan-line effect
-- [ ] Waiting state: "Waiting for leader..." with pulsing animation
+- [x] Waiting state: "Waiting for leader..." with pulsing animation
 
 ### 3.5 Ghost Cursor Enhancement
-- [ ] Radial glow behind cursor (spotlight effect)
+- [x] Radial glow behind cursor (spotlight effect)
 - [ ] Smooth interpolation between positions
-- [ ] Click ripple with glow
+- [x] Click ripple with glow
 - [ ] Leader name label (optional, toggleable)
 
 ### 3.6 Controls Bar
-- [ ] Floating at bottom, appears on hover
-- [ ] Fullscreen toggle
-- [ ] Copy link button with toast feedback
+- [x] Floating at bottom, appears on hover
+- [x] Fullscreen toggle (button added, JS TODO)
+- [x] Copy link button with toast feedback
 - [ ] Settings (future: zoom, PiP mode)
 
 ### 3.7 Empty/Waiting States
-- [ ] No leader: Dark screen with "Waiting for leader to connect..."
-- [ ] Leader connected, no DOM: "Leader is preparing to share..."
+- [x] No leader: Dark screen with "Waiting for broadcast..."
+- [x] Leader connected, no DOM: "Leader connected, waiting for content..."
 - [ ] Connection lost: "Reconnecting..." with spinner
 
 ---

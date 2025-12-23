@@ -84,8 +84,13 @@ defmodule CoviewWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
-      import CoviewWeb.CoreComponents
+
+      # Sutra UI components
+      use SutraUI
+
+      # Core UI components (app-specific)
+      # Exclude show/hide to avoid conflict with SutraUI.Flash
+      import CoviewWeb.CoreComponents, except: [show: 1, show: 2, hide: 1, hide: 2]
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

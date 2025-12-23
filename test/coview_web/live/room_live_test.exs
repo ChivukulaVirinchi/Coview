@@ -9,7 +9,7 @@ defmodule CoviewWeb.RoomLiveTest do
     test "renders room page with waiting state", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/room/test-room")
 
-      assert html =~ "Waiting for leader to share"
+      assert html =~ "Waiting for broadcast"
       assert html =~ "test-room"
       assert has_element?(view, "#copy-link-btn")
     end
@@ -26,8 +26,8 @@ defmodule CoviewWeb.RoomLiveTest do
     test "shows presence count", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/room/presence-test")
 
-      # Initially shows 1 viewing (self, once connected)
-      assert html =~ "viewing"
+      # Initially shows 1 watching (self, once connected)
+      assert html =~ "watching"
     end
   end
 
@@ -172,8 +172,8 @@ defmodule CoviewWeb.RoomLiveTest do
 
       # First viewer should see updated presence count
       html = render(view1)
-      # Should show "2 viewing" or similar
-      assert html =~ "viewing"
+      # Should show "2 watching" or similar
+      assert html =~ "watching"
     end
   end
 end
