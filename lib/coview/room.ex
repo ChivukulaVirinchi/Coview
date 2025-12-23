@@ -18,6 +18,8 @@ defmodule Coview.Room do
     :current_url,
     :cursor_position,
     :scroll_position,
+    :viewport_width,
+    :viewport_height,
     :created_at,
     followers: []
   ]
@@ -58,9 +60,20 @@ defmodule Coview.Room do
 
   @doc """
   Updates the DOM state and broadcasts to all subscribers.
+  is_full_page indicates if this is a full page navigation (requires full replacement)
+  or an incremental update (can use morphdom).
   """
-  def update_dom(room_id, dom) do
-    GenServer.cast(via_tuple(room_id), {:update_dom, dom})
+  def update_dom(
+        room_id,
+        dom,
+        viewport_width \\ nil,
+        viewport_height \\ nil,
+        is_full_page \\ true
+      ) do
+    GenServer.cast(
+      via_tuple(room_id),
+      {:update_dom, dom, viewport_width, viewport_height, is_full_page}
+    )
   end
 
   @doc """
@@ -131,15 +144,27 @@ defmodule Coview.Room do
   end
 
   @impl true
-  def handle_cast({:update_dom, dom}, state) do
+  def handle_cast({:update_dom, dom, viewport_width, viewport_height, is_full_page}, state) do
     require Logger
 
     Logger.info(
-      "[Room] Broadcasting DOM update for room #{state.room_id}, size: #{String.length(dom)} bytes"
+      "[Room] Broadcasting DOM update for room #{state.room_id}, size: #{String.length(dom)} bytes, viewport: #{viewport_width}x#{viewport_height}, full_page: #{is_full_page}"
     )
 
-    Phoenix.PubSub.broadcast(Coview.PubSub, "room:#{state.room_id}", {:dom_update, dom})
-    {:noreply, %{state | current_dom: dom}}
+    Phoenix.PubSub.broadcast(
+      Coview.PubSub,
+      "room:#{state.room_id}",
+      {:dom_update,
+       %{
+         html: dom,
+         viewport_width: viewport_width,
+         viewport_height: viewport_height,
+         is_full_page: is_full_page
+       }}
+    )
+
+    {:noreply,
+     %{state | current_dom: dom, viewport_width: viewport_width, viewport_height: viewport_height}}
   end
 
   @impl true

@@ -36,11 +36,17 @@ defmodule CoviewWeb.RoomLiveTest do
       room_id = "dom-test-#{System.unique_integer([:positive])}"
       {:ok, view, _html} = live(conn, ~p"/room/#{room_id}")
 
-      # Simulate DOM update from leader via PubSub
+      # Simulate DOM update from leader via PubSub (new format with viewport dimensions)
       Phoenix.PubSub.broadcast(
         Coview.PubSub,
         "room:#{room_id}",
-        {:dom_update, "<html><body><h1>Hello World</h1></body></html>"}
+        {:dom_update,
+         %{
+           html: "<html><body><h1>Hello World</h1></body></html>",
+           viewport_width: 1920,
+           viewport_height: 1080,
+           is_full_page: true
+         }}
       )
 
       # Wait for LiveView to process the message
@@ -49,6 +55,7 @@ defmodule CoviewWeb.RoomLiveTest do
       html = render(view)
       assert html =~ "Hello World"
       assert has_element?(view, "#view-frame")
+      assert has_element?(view, "#scaled-wrapper")
     end
   end
 
@@ -56,6 +63,21 @@ defmodule CoviewWeb.RoomLiveTest do
     test "updates cursor position on broadcast", %{conn: conn} do
       room_id = "cursor-test-#{System.unique_integer([:positive])}"
       {:ok, view, _html} = live(conn, ~p"/room/#{room_id}")
+
+      # First need DOM with viewport dimensions for cursor to appear
+      Phoenix.PubSub.broadcast(
+        Coview.PubSub,
+        "room:#{room_id}",
+        {:dom_update,
+         %{
+           html: "<html><body>Content</body></html>",
+           viewport_width: 1920,
+           viewport_height: 1080,
+           is_full_page: true
+         }}
+      )
+
+      _ = render(view)
 
       # Simulate cursor update from leader
       Phoenix.PubSub.broadcast(

@@ -76,15 +76,20 @@ defmodule CoviewWeb.RoomChannel do
 
   # Leader sends full DOM
   @impl true
-  def handle_in("dom_full", %{"html" => html}, socket) do
+  def handle_in("dom_full", params, socket) do
     require Logger
 
+    html = params["html"]
+    viewport_width = params["viewport_width"]
+    viewport_height = params["viewport_height"]
+    is_full_page = Map.get(params, "is_full_page", true)
+
     Logger.info(
-      "[RoomChannel] Received dom_full from #{socket.assigns.role}, room: #{socket.assigns.room_id}, size: #{String.length(html)} bytes"
+      "[RoomChannel] Received dom_full from #{socket.assigns.role}, room: #{socket.assigns.room_id}, size: #{String.length(html)} bytes, viewport: #{viewport_width}x#{viewport_height}, full_page: #{is_full_page}"
     )
 
     if socket.assigns.role == "leader" do
-      Room.update_dom(socket.assigns.room_id, html)
+      Room.update_dom(socket.assigns.room_id, html, viewport_width, viewport_height, is_full_page)
       Logger.info("[RoomChannel] DOM update sent to Room GenServer")
     else
       Logger.warning("[RoomChannel] Non-leader tried to send DOM")

@@ -24,24 +24,112 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/coview"
 import topbar from "../vendor/topbar"
+import morphdom from "morphdom"
 
 // CoView Hooks
 let Hooks = {}
 
-// Hook to handle iframe scroll sync from server push events
+// Hook to handle iframe content updates using morphdom for incremental patching
 Hooks.ViewFrame = {
   mounted() {
+    this.iframeReady = false
+    this.pendingUpdate = null
+    
+    // Track iframe load state
+    this.el.addEventListener('load', () => {
+      console.debug("CoView: Iframe loaded, ready for morphdom updates")
+      this.iframeReady = true
+      
+      // Apply any pending update that arrived before iframe was ready
+      if (this.pendingUpdate) {
+        console.debug("CoView: Applying pending update")
+        this.applyMorphdom(this.pendingUpdate)
+        this.pendingUpdate = null
+      }
+    })
+    
+    // Handle scroll sync from server
     this.handleEvent("scroll_to", ({x, y}) => {
       const iframe = this.el
       if (iframe.contentWindow) {
         try {
           iframe.contentWindow.scrollTo(x, y)
         } catch (e) {
-          // Cross-origin restrictions may prevent this
           console.debug("Could not scroll iframe:", e)
         }
       }
     })
+
+    // Handle DOM updates - either full replacement or morphdom patching
+    this.handleEvent("dom_update", ({html, is_full_page}) => {
+      const iframe = this.el
+      
+      // Full page navigation - replace entire iframe content
+      if (is_full_page) {
+        console.debug("CoView: Full page update - replacing iframe content")
+        this.iframeReady = false  // Will be ready again after load event
+        this.pendingUpdate = null
+        iframe.srcdoc = html
+        return
+      }
+      
+      // Incremental update - use morphdom if iframe is ready
+      if (!this.iframeReady) {
+        // Queue update for when iframe finishes loading
+        console.debug("CoView: Iframe not ready, queuing update for later")
+        this.pendingUpdate = html
+        return
+      }
+      
+      this.applyMorphdom(html)
+    })
+  },
+  
+  applyMorphdom(html) {
+    const iframe = this.el
+    
+    // Double-check iframe is accessible
+    if (!iframe.contentDocument || !iframe.contentDocument.body) {
+      console.warn("CoView: Iframe contentDocument not accessible, cannot apply morphdom")
+      return
+    }
+
+    try {
+      // Parse the incoming HTML
+      const parser = new DOMParser()
+      const newDoc = parser.parseFromString(html, "text/html")
+      
+      // Morph the head (for stylesheets, etc.)
+      if (iframe.contentDocument.head && newDoc.head) {
+        morphdom(iframe.contentDocument.head, newDoc.head, {
+          onBeforeElUpdated: (fromEl, toEl) => {
+            // Preserve script tags to avoid re-execution issues
+            if (fromEl.tagName === 'SCRIPT') return false
+            return true
+          }
+        })
+      }
+      
+      // Morph the body (main content)
+      if (iframe.contentDocument.body && newDoc.body) {
+        morphdom(iframe.contentDocument.body, newDoc.body, {
+          onBeforeElUpdated: (fromEl, toEl) => {
+            // Preserve focused elements to maintain user context
+            if (fromEl === iframe.contentDocument.activeElement) {
+              return false
+            }
+            return true
+          },
+          childrenOnly: false
+        })
+      }
+      
+      console.debug("CoView: Morphdom update applied successfully")
+    } catch (e) {
+      console.error("CoView: Morphdom update failed:", e)
+      // Don't fallback to srcdoc here - that would cause a reload loop
+      // Just log the error and continue
+    }
   }
 }
 
@@ -77,6 +165,56 @@ Hooks.CopyLink = {
         console.error("Failed to copy:", err)
       })
     })
+  }
+}
+
+// Hook to scale the leader's viewport to fit the viewer's container
+// This preserves exact pixel positions for cursor alignment
+Hooks.ScaledView = {
+  mounted() {
+    this.updateScale()
+    this.resizeObserver = new ResizeObserver(() => this.updateScale())
+    this.resizeObserver.observe(this.el)
+  },
+
+  updated() {
+    this.updateScale()
+  },
+
+  destroyed() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+    }
+  },
+
+  updateScale() {
+    const wrapper = document.getElementById("scaled-wrapper")
+    if (!wrapper) return
+
+    const viewportWidth = parseInt(this.el.dataset.viewportWidth, 10)
+    const viewportHeight = parseInt(this.el.dataset.viewportHeight, 10)
+    
+    if (!viewportWidth || !viewportHeight) return
+
+    // Get container dimensions (accounting for padding/borders)
+    const containerWidth = this.el.clientWidth
+    const containerHeight = this.el.clientHeight
+
+    // Calculate scale to fit container while maintaining aspect ratio
+    const scaleX = containerWidth / viewportWidth
+    const scaleY = containerHeight / viewportHeight
+    const scale = Math.min(scaleX, scaleY)
+
+    // Apply transform - origin is top-left so content scales from there
+    wrapper.style.transform = `scale(${scale})`
+    
+    // Center the scaled content if there's extra space
+    const scaledWidth = viewportWidth * scale
+    const scaledHeight = viewportHeight * scale
+    const offsetX = (containerWidth - scaledWidth) / 2
+    const offsetY = (containerHeight - scaledHeight) / 2
+    wrapper.style.left = `${offsetX}px`
+    wrapper.style.top = `${offsetY}px`
   }
 }
 

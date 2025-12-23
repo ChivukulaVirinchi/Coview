@@ -180,7 +180,8 @@ function convertToAbsoluteUrls(root) {
 }
 
 // Send DOM update to background script
-function sendDOMUpdate() {
+// isFullPage: true for navigation/initial load, false for incremental updates
+function sendDOMUpdate(isFullPage = true) {
   if (!isCapturing) return;
 
   const html = captureDOM();
@@ -188,8 +189,14 @@ function sendDOMUpdate() {
   // Only send if DOM has changed
   if (html !== lastDomSnapshot) {
     lastDomSnapshot = html;
-    console.log('CoView: Sending DOM update, size:', html.length);
-    chrome.runtime.sendMessage({ type: 'DOM_UPDATE', html })
+    console.log('CoView: Sending DOM update, size:', html.length, 'fullPage:', isFullPage);
+    chrome.runtime.sendMessage({ 
+      type: 'DOM_UPDATE', 
+      html,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      isFullPage
+    })
       .then(() => console.log('CoView: DOM update sent'))
       .catch((err) => console.error('CoView: Failed to send DOM:', err));
   }
@@ -272,27 +279,46 @@ function removeEventListeners() {
 // Mutation observer
 let mutationObserver = null;
 
+// Debounced DOM update for small changes (class/style)
 const debouncedDOMUpdate = debounce(() => {
-  sendDOMUpdate();
+  sendDOMUpdate(false); // incremental update
+}, 100);
+
+// Debounced DOM update for larger structural changes
+const debouncedStructuralUpdate = debounce(() => {
+  sendDOMUpdate(false); // incremental update
 }, 250);
 
 function setupMutationObserver() {
   mutationObserver = new MutationObserver((mutations) => {
     if (!isCapturing) return;
     
-    // Check if any significant changes occurred
-    const hasSignificantChanges = mutations.some(mutation => {
-      // Ignore attribute changes on certain elements
-      if (mutation.type === 'attributes') {
-        const ignoredAttrs = ['class', 'style', 'data-'];
-        if (ignoredAttrs.some(attr => mutation.attributeName?.startsWith(attr))) {
-          return false;
+    let hasStructuralChanges = false;
+    let hasVisibilityChanges = false;
+    
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList') {
+        // New nodes added/removed - structural change
+        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+          hasStructuralChanges = true;
         }
+      } else if (mutation.type === 'attributes') {
+        const attr = mutation.attributeName;
+        // Check for visibility-related attribute changes (popovers, modals, dropdowns)
+        if (attr === 'class' || attr === 'style' || attr === 'hidden' || 
+            attr === 'aria-hidden' || attr === 'aria-expanded' || attr === 'open' ||
+            attr === 'data-state' || attr === 'data-open' || attr === 'data-visible') {
+          hasVisibilityChanges = true;
+        }
+      } else if (mutation.type === 'characterData') {
+        hasStructuralChanges = true;
       }
-      return true;
-    });
+    }
 
-    if (hasSignificantChanges) {
+    // Prioritize: structural changes use longer debounce, visibility changes use shorter
+    if (hasStructuralChanges) {
+      debouncedStructuralUpdate();
+    } else if (hasVisibilityChanges) {
       debouncedDOMUpdate();
     }
   });
@@ -301,6 +327,7 @@ function setupMutationObserver() {
     childList: true,
     subtree: true,
     attributes: true,
+    attributeFilter: ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded', 'open', 'data-state', 'data-open', 'data-visible'],
     characterData: true
   });
 }
@@ -310,8 +337,10 @@ const originalPushState = history.pushState;
 history.pushState = function(...args) {
   originalPushState.apply(this, args);
   if (isCapturing) {
+    // Reset snapshot to force full update
+    lastDomSnapshot = null;
     chrome.runtime.sendMessage({ type: 'NAVIGATION', url: window.location.href });
-    setTimeout(sendDOMUpdate, 100); // Give page time to render
+    setTimeout(() => sendDOMUpdate(true), 100); // Full page update
   }
 };
 
@@ -319,15 +348,17 @@ const originalReplaceState = history.replaceState;
 history.replaceState = function(...args) {
   originalReplaceState.apply(this, args);
   if (isCapturing) {
+    lastDomSnapshot = null;
     chrome.runtime.sendMessage({ type: 'NAVIGATION', url: window.location.href });
-    setTimeout(sendDOMUpdate, 100);
+    setTimeout(() => sendDOMUpdate(true), 100); // Full page update
   }
 };
 
 window.addEventListener('popstate', () => {
   if (isCapturing) {
+    lastDomSnapshot = null;
     chrome.runtime.sendMessage({ type: 'NAVIGATION', url: window.location.href });
-    setTimeout(sendDOMUpdate, 100);
+    setTimeout(() => sendDOMUpdate(true), 100); // Full page update
   }
 });
 

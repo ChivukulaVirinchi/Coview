@@ -34,8 +34,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'DOM_UPDATE':
       if (channel && isSharing) {
-        console.log('Sending DOM update, size:', message.html?.length || 0);
-        channel.push('dom_full', { html: message.html })
+        console.log('Sending DOM update, size:', message.html?.length || 0, 'fullPage:', message.isFullPage);
+        channel.push('dom_full', { 
+          html: message.html,
+          viewport_width: message.viewportWidth,
+          viewport_height: message.viewportHeight,
+          is_full_page: message.isFullPage !== false // default to true for backwards compat
+        })
           .receive('ok', () => console.log('DOM sent successfully'))
           .receive('error', (err) => console.error('DOM send error:', err))
           .receive('timeout', () => console.error('DOM send timeout'));

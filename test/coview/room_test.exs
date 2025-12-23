@@ -57,21 +57,68 @@ defmodule Coview.RoomTest do
     end
   end
 
-  describe "update_dom/2" do
-    test "stores DOM and broadcasts" do
+  describe "update_dom/5" do
+    test "stores DOM and broadcasts with viewport dimensions" do
       room_id = "test-room-#{System.unique_integer([:positive])}"
       {:ok, _pid} = Room.get_or_create(room_id)
 
       Phoenix.PubSub.subscribe(Coview.PubSub, "room:#{room_id}")
 
       html = "<html><body>Test</body></html>"
-      Room.update_dom(room_id, html)
+      Room.update_dom(room_id, html, 1920, 1080, true)
 
-      assert_receive {:dom_update, ^html}
+      assert_receive {:dom_update,
+                      %{
+                        html: ^html,
+                        viewport_width: 1920,
+                        viewport_height: 1080,
+                        is_full_page: true
+                      }}
 
       # Sync with GenServer to ensure state is updated
       state = Room.get_state(room_id)
       assert state.current_dom == html
+      assert state.viewport_width == 1920
+      assert state.viewport_height == 1080
+    end
+
+    test "stores DOM with nil viewport dimensions" do
+      room_id = "test-room-#{System.unique_integer([:positive])}"
+      {:ok, _pid} = Room.get_or_create(room_id)
+
+      Phoenix.PubSub.subscribe(Coview.PubSub, "room:#{room_id}")
+
+      html = "<html><body>Test</body></html>"
+      Room.update_dom(room_id, html, nil, nil, true)
+
+      assert_receive {:dom_update,
+                      %{
+                        html: ^html,
+                        viewport_width: nil,
+                        viewport_height: nil,
+                        is_full_page: true
+                      }}
+
+      state = Room.get_state(room_id)
+      assert state.current_dom == html
+    end
+
+    test "broadcasts incremental update with is_full_page false" do
+      room_id = "test-room-#{System.unique_integer([:positive])}"
+      {:ok, _pid} = Room.get_or_create(room_id)
+
+      Phoenix.PubSub.subscribe(Coview.PubSub, "room:#{room_id}")
+
+      html = "<html><body>Test</body></html>"
+      Room.update_dom(room_id, html, 1920, 1080, false)
+
+      assert_receive {:dom_update,
+                      %{
+                        html: ^html,
+                        viewport_width: 1920,
+                        viewport_height: 1080,
+                        is_full_page: false
+                      }}
     end
   end
 
