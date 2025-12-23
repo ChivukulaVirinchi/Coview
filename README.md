@@ -1,18 +1,53 @@
-# Coview
+# CoView
 
-To start your Phoenix server:
+Share your browser. Not a video of it.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+https://github.com/ChivukulaVirinchi/Coview/raw/main/demo.mp4
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+CoView streams your page's DOM over WebSockets. Viewers see crisp text, not compressed video artifacts. ~100KB/s bandwidth. <50ms latency.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## How it works
 
-## Learn more
+1. Chrome extension captures your page's DOM
+2. Phoenix server broadcasts changes to viewers via Channels
+3. Viewers render the DOM locally with morphdom
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+No video encoding. No screen capture. Just HTML.
+
+## Why Elixir
+
+Phoenix Channels handle thousands of concurrent viewers per room without breaking a sweat. Each room is a lightweight process. The BEAM was built for this.
+
+## Run locally
+
+```bash
+git clone https://github.com/ChivukulaVirinchi/Coview
+cd Coview
+mix setup
+mix phx.server
+```
+
+Server runs at `localhost:4000`.
+
+### Load the extension
+
+1. Open `chrome://extensions`
+2. Enable Developer mode
+3. Click "Load unpacked" → select the `extension/` folder
+
+### Share
+
+1. Click the CoView extension icon
+2. Enter a room name, hit Start
+3. Send viewers to `localhost:4000`, enter the room code
+
+## Stack
+
+- Elixir + Phoenix
+- Phoenix Channels (WebSockets)
+- morphdom (DOM diffing)
+- Chrome Extension (Manifest V3)
+
+## License
+
+MIT

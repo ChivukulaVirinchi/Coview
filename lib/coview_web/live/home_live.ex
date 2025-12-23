@@ -186,11 +186,7 @@ defmodule CoviewWeb.HomeLive do
       <footer class="border-t border-border py-6">
         <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <span>CoView</span>
-          <div class="flex gap-6">
-            <a href={@github_url} class="hover:text-foreground transition-colors">GitHub</a>
-            <a href="https://elixir-lang.org" class="hover:text-foreground transition-colors">Elixir</a>
-            <a href="https://phoenixframework.org" class="hover:text-foreground transition-colors">Phoenix</a>
-          </div>
+          <a href={@github_url} class="hover:text-foreground transition-colors">GitHub</a>
         </div>
       </footer>
     </Layouts.app>
