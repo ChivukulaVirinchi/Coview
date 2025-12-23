@@ -38,16 +38,15 @@ defmodule CoviewWeb.Layouts do
     ~H"""
     <header class="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="flex-1">
-        <a href="/" class="flex w-fit items-center gap-2 group">
-          <img src={~p"/images/logo.svg"} width="36" class="dark:brightness-0 dark:invert transition-all" />
-          <span class="text-sm font-semibold text-muted-foreground group-hover:text-foreground transition-colors">CoView</span>
+        <a href="/" class="font-semibold text-lg tracking-tight text-foreground hover:opacity-80 transition-opacity">
+          CoView
         </a>
       </div>
       <div class="flex-none">
-        <ul class="flex flex-row px-1 space-x-4 items-center">
+        <ul class="flex flex-row space-x-4 items-center">
           <li>
             <a
-              href="https://github.com/virinchi/coview"
+              href="https://github.com/ChivukulaVirinchi/Coview"
               class="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               GitHub

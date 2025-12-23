@@ -191,7 +191,7 @@ defmodule CoviewWeb.RoomLive do
           <div class="flex -space-x-2">
             <%= for {_user_id, %{metas: [meta | _]}} <- Enum.take(@presences, 5) do %>
               <div class={[
-                "viewer-orb animate-bloom",
+                "viewer-orb",
                 if(meta.role == "leader", do: "leader", else: "connected")
               ]}>
                 {if meta.role == "leader", do: "L", else: "V"}
@@ -227,7 +227,7 @@ defmodule CoviewWeb.RoomLive do
           <%!-- Scaled wrapper - JS will calculate and apply the scale transform --%>
           <div
             id="scaled-wrapper"
-            class="origin-top-left absolute animate-fade-up"
+            class="origin-top-left absolute"
             style={"width: #{@viewport_width}px; height: #{@viewport_height}px;"}
           >
             <%!-- phx-update="ignore" prevents LiveView from touching iframe after initial render --%>
@@ -243,17 +243,14 @@ defmodule CoviewWeb.RoomLive do
               />
             </div>
 
-            <%!-- Ghost Cursor with spotlight effect --%>
+            <%!-- Ghost Cursor --%>
             <%= if @cursor do %>
               <div
                 id="ghost-cursor"
-                class="absolute pointer-events-none z-50 transition-all duration-75"
+                class="absolute pointer-events-none z-50"
                 style={"left: #{@cursor["x"] || @cursor[:x] || 0}px; top: #{@cursor["y"] || @cursor[:y] || 0}px;"}
               >
-                <%!-- Cursor glow --%>
-                <div class="absolute -inset-4 bg-coview-accent/20 rounded-full blur-xl"></div>
-                <%!-- Cursor icon --%>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="relative">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M4 4L12 20L14 14L20 12L4 4Z"
                     fill="var(--coview-accent)"
@@ -301,7 +298,7 @@ defmodule CoviewWeb.RoomLive do
 
       <%!-- Bottom Bar (optional floating controls) --%>
       <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 hover:opacity-100 transition-opacity">
-        <button class="p-2 bg-card/80 backdrop-blur border border-border rounded-lg text-muted-foreground hover:text-foreground transition">
+        <button class="p-2 bg-card border border-border rounded-lg text-muted-foreground hover:text-foreground">
           <.icon name="hero-arrows-pointing-out" class="size-5" />
         </button>
       </div>
